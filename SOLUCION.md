@@ -1,6 +1,8 @@
 # SOLUCION.md — Reto Técnico 03: Agente Conversacional "Órdenes de Compra SAP"
 
 > **Proceso de Selección · Equipo Perxia 2.0 · Periferia IT Group**
+> - **URL en Vivo (Producción):** [https://periferia-reto-03.onrender.com](https://periferia-reto-03.onrender.com)
+> - **Repositorio GitHub:** [https://github.com/angelmo1505/periferia-reto-03](https://github.com/angelmo1505/periferia-reto-03)
 
 ---
 

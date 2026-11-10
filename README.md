@@ -2,6 +2,9 @@
 
 Agente conversacional de extremo a extremo en **TypeScript (Node 20+ / Bun)** para automatizar la lectura, auditoría de controles (`RC1`–`RC10`), generación de evidencia criptográfica (`TXT` y `PDF` con `SHA-256`), previsualización de payload y creación idempotente de Órdenes de Compra en SAP.
 
+- 🌐 **Enlace Público en Vivo (Producción - Render):** **[https://periferia-reto-03.onrender.com](https://periferia-reto-03.onrender.com)** *(Acceso público, no requiere contraseña)*
+- 📦 **Repositorio GitHub:** **[https://github.com/angelmo1505/periferia-reto-03](https://github.com/angelmo1505/periferia-reto-03)**
+
 ---
 
 ## 🚀 1. Cómo levantar en local (Un solo comando)
