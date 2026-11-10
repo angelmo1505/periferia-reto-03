@@ -2,7 +2,6 @@
 name: ordenes-compra
 description: Reglas de negocio, matriz de controles (RC1-RC10), estructura de payload SAP y políticas de auditoría para Órdenes de Compra en Periferia IT Group.
 ---
-
 # Conocimiento del Proceso: Órdenes de Compra SAP (Periferia IT Group)
 
 ## 1. Flujo Operativo de una Solicitud de Compra

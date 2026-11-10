@@ -67,6 +67,7 @@ export const PaqueteSchema = z.object({
   cotizacion: CotizacionNormalizadaSchema.nullable(),
   aprobacion: AprobacionNormalizadaSchema.nullable(),
   factura: FacturaNormalizadaSchema.nullable(),
+  faltantes: z.array(z.string()).optional(),
   adjuntos_faltantes: z.array(z.string()).optional(),
 });
 
@@ -362,6 +363,7 @@ async function leerPaqueteInterno(caso: string, rootDir: string): Promise<Paquet
     cotizacion,
     aprobacion,
     factura,
+    faltantes: adjuntosFaltantes,
     adjuntos_faltantes: adjuntosFaltantes,
   };
 }
@@ -1185,7 +1187,15 @@ export const construir_payload = {
         null,
         rootDir
       );
-      return JSON.stringify({ ok: true, data });
+      return JSON.stringify({
+        ok: true,
+        data: {
+          ...data.payload,
+          ruta_trazabilidad: data.ruta_trazabilidad,
+          payload: data.payload,
+          trazabilidad: data.trazabilidad,
+        },
+      });
     } catch (err) {
       return JSON.stringify({
         ok: false,

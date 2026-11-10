@@ -126,6 +126,43 @@ async function cargarSystemPrompt(): Promise<string> {
     fs.readFile(promptPath, "utf-8"),
     fs.readFile(knowledgePath, "utf-8"),
   ]);
+
+  // Garantizar sincronización automática con modulo/ (Sección 9.4 PRD: cero divergencia)
+  const moduloAgentHeader = [
+    "---",
+    "description: Agente Especialista en Auditoría, Validación de Controles (RC1-RC10) y Creación de Órdenes de Compra en SAP para Periferia IT Group.",
+    "mode: primary",
+    "permission:",
+    "  edit: deny",
+    "  bash: deny",
+    "---",
+    "",
+  ].join("\n");
+  const moduloSkillHeader = [
+    "---",
+    "name: ordenes-compra",
+    "description: Reglas de negocio, matriz de controles (RC1-RC10), estructura de payload SAP y políticas de auditoría para Órdenes de Compra en Periferia IT Group.",
+    "---",
+    "",
+  ].join("\n");
+
+  await Promise.all([
+    fs
+      .writeFile(
+        path.join(ROOT_DIR, "modulo", "agent.md"),
+        `${moduloAgentHeader}${promptMd.trim()}\n`,
+        "utf-8"
+      )
+      .catch(() => undefined),
+    fs
+      .writeFile(
+        path.join(ROOT_DIR, "modulo", "skill", "ordenes-compra", "SKILL.md"),
+        `${moduloSkillHeader}${knowledgeMd.trim()}\n`,
+        "utf-8"
+      )
+      .catch(() => undefined),
+  ]);
+
   return `${promptMd.trim()}\n\n---\n\n${knowledgeMd.trim()}`;
 }
 
