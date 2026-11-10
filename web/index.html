@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Periferia IT Group · Agente SAP Órdenes de Compra (Reto 03)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+    .markdown-body h3 { font-size: 1.05rem; font-weight: 700; margin-top: 0.5rem; margin-bottom: 0.6rem; color: #f8fafc; }
+    .markdown-body h4 { font-size: 0.9rem; font-weight: 600; margin-top: 0.85rem; margin-bottom: 0.45rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.03em; }
+    .markdown-body p { margin-bottom: 0.6rem; line-height: 1.55; }
+    .markdown-body ul { list-style-type: disc; padding-left: 1.25rem; margin-bottom: 0.65rem; }
+    .markdown-body li { margin-bottom: 0.25rem; }
+    .markdown-body table { width: 100%; border-collapse: collapse; margin: 0.65rem 0; font-size: 0.82rem; background: rgba(15, 23, 42, 0.65); border-radius: 0.5rem; overflow: hidden; }
+    .markdown-body th { background: rgba(30, 41, 59, 0.9); color: #94a3b8; font-weight: 600; text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #334155; }
+    .markdown-body td { padding: 0.48rem 0.75rem; border-bottom: 1px solid rgba(51, 65, 85, 0.5); color: #e2e8f0; }
+    .markdown-body code { background: rgba(30, 41, 59, 0.9); color: #38bdf8; padding: 0.12rem 0.35rem; border-radius: 0.25rem; font-size: 0.8rem; }
+    .markdown-body hr { border-color: #334155; margin: 0.85rem 0; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen flex overflow-hidden">
+
+  <!-- SIDEBAR IZQUIERDO: Casos de Prueba, Estado del Agente y Auditoría -->
+  <aside class="w-80 lg:w-96 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+    <!-- Header Corporativo -->
+    <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-bold">
+          P
+        </div>
+        <div>
+          <h1 class="font-bold text-sm tracking-tight text-white">Periferia IT Group</h1>
+          <p class="text-xs text-slate-400">Agente SAP · Órdenes de Compra</p>
+        </div>
+      </div>
+      <span id="health-badge" class="px-2 py-0.5 text-[11px] rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 mono">
+        Online
+      </span>
+    </div>
+
+    <!-- Estado Técnico del Modelo y Sesión -->
+    <div class="p-3.5 border-b border-slate-800 bg-slate-900/60 text-xs space-y-1.5">
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">Proveedor / Modelo:</span>
+        <span id="llm-info" class="mono text-sky-400 font-medium">Cargando...</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">Sesión Activa:</span>
+        <span id="session-id-label" class="mono text-slate-300">-</span>
+      </div>
+      <div class="flex justify-between items-center">
+        <span class="text-slate-400">Tokens Sesión / Tope:</span>
+        <span id="token-usage-label" class="mono text-slate-300">0 / 100,000</span>
+      </div>
+    </div>
+
+    <!-- Selector Rápido de Casos de Prueba (Fixtures) -->
+    <div class="flex-1 overflow-y-auto p-3.5 space-y-3">
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Casos de Prueba (Fixtures)</h2>
+          <button onclick="usarPromptDemo()" class="text-[11px] text-amber-400 hover:text-amber-300 font-medium underline">
+            Prompt Demo §11
+          </button>
+        </div>
+
+        <div class="space-y-1.5" id="cases-list">
+          <button onclick="enviarCaso('sol-001')" class="w-full text-left p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition group">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-xs text-white group-hover:text-emerald-400 mono">sol-001</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">O1 · Flujo Normal</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 truncate">TecnoSuministros · Licencias antivirus ($11.4M)</p>
+          </button>
+
+          <button onclick="enviarCaso('sol-002')" class="w-full text-left p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition group">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-xs text-white group-hover:text-rose-400 mono">sol-002</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">O2 · Bloqueo RC1</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 truncate">Proveedor inexistente en maestro SAP</p>
+          </button>
+
+          <button onclick="enviarCaso('sol-003')" class="w-full text-left p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition group">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-xs text-white group-hover:text-rose-400 mono">sol-003</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/15 text-rose-400 border border-rose-500/30">O2 · Bloqueo RC2/RC3</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 truncate">Aprobador sin autoridad en CC-2020 ($74M)</p>
+          </button>
+
+          <button onclick="usarPromptDemo()" class="w-full text-left p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-amber-500/40 transition group">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-xs text-white group-hover:text-amber-400 mono">sol-004 ⭐ (Demo §11)</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">O3 · Confirmar RC5</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 truncate">Cotización ($26.5M) ≠ Solicitud ($25M) (+6%)</p>
+          </button>
+
+          <button onclick="enviarCaso('sol-005')" class="w-full text-left p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition group">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-xs text-white group-hover:text-amber-400 mono">sol-005</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-400 border border-amber-500/30">O4 · Retroactiva RC8</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 truncate">Factura FC-88231 anterior a la solicitud</p>
+          </button>
+
+          <button onclick="enviarCaso('sol-006')" class="w-full text-left p-2.5 rounded-lg bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 transition group">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold text-xs text-white group-hover:text-amber-400 mono">sol-006</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-400 border border-sky-500/30">O3 · Derivados RC6/7</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1 truncate">Sin NIT ni IVA en solicitud (deriva C1 y Z030)</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- Inspector en vivo de out/control.csv y out/sap/ordenes.jsonl -->
+      <div class="pt-2 border-t border-slate-800">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Auditoría SAP & Control</h2>
+          <button onclick="cargarEstadoArchivos()" class="text-[11px] text-sky-400 hover:text-sky-300">
+            Actualizar
+          </button>
+        </div>
+        <div id="audit-summary" class="space-y-1.5 text-[11px] text-slate-300 bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 mono max-h-48 overflow-y-auto">
+          Cargando registros de out/...
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Sidebar -->
+    <div class="p-3 border-t border-slate-800 flex gap-2">
+      <button onclick="nuevaSesion()" class="flex-1 py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition">
+        🔄 Nueva Sesión
+      </button>
+    </div>
+  </aside>
+
+  <!-- ÁREA PRINCIPAL DE CHAT E INSPECTOR DE HERRAMIENTAS -->
+  <main class="flex-1 flex flex-col h-full bg-slate-950">
+    <!-- Topbar -->
+    <header class="h-14 border-b border-slate-800 px-6 flex items-center justify-between bg-slate-900/40 shrink-0">
+      <div class="flex items-center gap-2.5">
+        <span class="text-sm font-semibold text-slate-100">Consola Conversacional de Analista Compras / SAP</span>
+        <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 mono">Sociedad 1000</span>
+      </div>
+      <div class="text-xs text-slate-400">
+        Reglas activas: <span class="mono text-emerald-400">RC1–RC10</span> · Tope Iteraciones: <span class="mono text-slate-200">25</span>
+      </div>
+    </header>
+
+    <!-- Mensajes del Chat -->
+    <div id="chat-container" class="flex-1 overflow-y-auto p-6 space-y-5">
+      <div class="max-w-4xl mx-auto bg-slate-900/90 border border-slate-800 rounded-xl p-4 text-sm text-slate-300">
+        <p class="font-semibold text-white mb-1">👋 Bienvenida al Agente de Órdenes de Compra SAP (Periferia IT Group)</p>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Selecciona cualquiera de los 6 casos a la izquierda o escribe tu instrucción abajo. Cada turno mostrará en tiempo real las llamadas a herramientas tipadas con <code class="text-sky-400">Zod</code> (<code class="text-sky-400">oc_*</code>) y resaltará las solicitudes de <strong>confirmación humana (HITL)</strong> cuando se detecten desviaciones de cotización, IVA derivado o compras retroactivas.
+        </p>
+      </div>
+    </div>
+
+    <!-- Banner Flotante de Confirmación Humana (HITL - Regla CA3) -->
+    <div id="confirmation-banner" class="hidden border-t border-amber-500/40 bg-amber-500/10 px-6 py-3.5 shrink-0">
+      <div class="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="text-xl">⚠️</span>
+          <div>
+            <p class="text-xs font-bold uppercase tracking-wider text-amber-300">Confirmación Humana Requerida (Regla CA3)</p>
+            <p class="text-xs text-amber-100/90">El agente ha pausado la creación en SAP esperando tu autorización explícita sobre las excepciones detectadas.</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+          <button onclick="confirmarAccion(true)" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow transition">
+            ✅ Confirmo, crear OC en SAP
+          </button>
+          <button onclick="confirmarAccion(false)" class="px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs border border-slate-700 transition">
+            ❌ Cancelar / No crear
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Indicador "Pensando..." -->
+    <div id="thinking-indicator" class="hidden px-6 py-2 bg-slate-900/60 border-t border-slate-800/80 text-xs text-sky-400 shrink-0">
+      <div class="max-w-4xl mx-auto flex items-center gap-2 mono">
+        <svg class="animate-spin h-4 w-4 text-sky-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <span>Ejecutando ciclo del agente y validando herramientas (oc_*)...</span>
+      </div>
+    </div>
+
+    <!-- Input del Chat -->
+    <footer class="p-4 border-t border-slate-800 bg-slate-900/60 shrink-0">
+      <form id="chat-form" onsubmit="handleSubmit(event)" class="max-w-4xl mx-auto flex gap-3">
+        <input
+          id="chat-input"
+          type="text"
+          autocomplete="off"
+          placeholder='Ej: Procesa la solicitud "sol-004". Muéstrame la OC como quedaría en SAP...'
+          class="flex-1 bg-slate-950 border border-slate-700 focus:border-sky-500 focus:outline-none rounded-xl px-4 py-3 text-sm text-slate-100 placeholder-slate-500"
+        />
+        <button
+          id="send-btn"
+          type="submit"
+          class="px-5 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 font-semibold text-sm text-white transition shrink-0"
+        >
+          Enviar
+        </button>
+      </form>
+    </footer>
+  </main>
+
+  <script>
+    let currentSessionId = localStorage.getItem('periferia_oc_session_id') || ('ses_' + Math.random().toString(36).slice(2, 10));
+    localStorage.setItem('periferia_oc_session_id', currentSessionId);
+
+    const chatContainer = document.getElementById('chat-container');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const thinkingIndicator = document.getElementById('thinking-indicator');
+    const confirmationBanner = document.getElementById('confirmation-banner');
+
+    async function inicializar() {
+      document.getElementById('session-id-label').textContent = currentSessionId;
+      try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        document.getElementById('llm-info').textContent = `${data.provider} (${data.model})`;
+      } catch {
+        document.getElementById('health-badge').textContent = 'Offline';
+      }
+      await cargarHistorialSesion();
+      await cargarEstadoArchivos();
+    }
+
+    async function cargarHistorialSesion() {
+      try {
+        const res = await fetch(`/api/sessions/${encodeURIComponent(currentSessionId)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.tokensUsed !== undefined) {
+          document.getElementById('token-usage-label').textContent =
+            `${data.tokensUsed.toLocaleString()} / ${(data.maxTokens || 100000).toLocaleString()}`;
+        }
+        if (data.turns && data.turns.length > 0) {
+          chatContainer.innerHTML = '';
+          for (const turn of data.turns) {
+            renderizarMensajeUsuario(turn.userMessage);
+            renderizarRespuestaAgente(turn.reply, turn.toolCalls || [], turn.needsConfirmation);
+          }
+          confirmationBanner.classList.toggle('hidden', !data.turns[data.turns.length - 1].needsConfirmation);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function cargarEstadoArchivos() {
+      const box = document.getElementById('audit-summary');
+      try {
+        const res = await fetch('/api/audit');
+        const data = await res.json();
+        const ordenesHtml = (data.ordenes || []).map(o =>
+          `<div class="text-emerald-400">✔ OC #${o.numero_oc} → ${o.orden.referencia.solicitud_id} (${o.orden.moneda} ${o.orden.posiciones[0].cantidad * o.orden.posiciones[0].precio_unitario})</div>`
+        ).join('');
+        const controlLines = (data.controlCsv || '').trim().split('\n').slice(1);
+        const controlHtml = controlLines.map(l => {
+          const cols = l.split(',');
+          return `<div class="text-slate-400 truncate">• ${cols[0]}: <span class="text-slate-200">${cols[1]}</span> ${cols[2] ? '(' + cols[2] + ')' : ''} ${cols[3] === 'true' ? '<span class="text-amber-400">[RETRO]</span>' : ''}</div>`;
+        }).join('');
+        box.innerHTML = `
+          <div class="font-semibold text-slate-200 mb-1">Órdenes SAP (${(data.ordenes || []).length}):</div>
+          ${ordenesHtml || '<div class="text-slate-500">Sin OC creadas aún</div>'}
+          <div class="font-semibold text-slate-200 mt-2 mb-1">Control CSV (${controlLines.filter(Boolean).length}):</div>
+          ${controlHtml || '<div class="text-slate-500">Sin registros aún</div>'}
+        `;
+      } catch {
+        box.textContent = 'Sin registros aún.';
+      }
+    }
+
+    function nuevaSesion() {
+      currentSessionId = 'ses_' + Math.random().toString(36).slice(2, 10);
+      localStorage.setItem('periferia_oc_session_id', currentSessionId);
+      document.getElementById('session-id-label').textContent = currentSessionId;
+      document.getElementById('token-usage-label').textContent = '0 / 100,000';
+      confirmationBanner.classList.add('hidden');
+      chatContainer.innerHTML = `
+        <div class="max-w-4xl mx-auto bg-slate-900/90 border border-slate-800 rounded-xl p-4 text-sm text-slate-300">
+          <p class="font-semibold text-white mb-1">🔄 Nueva sesión iniciada (${currentSessionId})</p>
+          <p class="text-xs text-slate-400">Selecciona un caso de prueba en el panel izquierdo o ingresa tu mensaje.</p>
+        </div>
+      `;
+    }
+
+    function usarPromptDemo() {
+      chatInput.value = 'Procesa la solicitud "sol-004". Muéstrame la OC como quedaría en SAP, qué validaciones pasó y cuáles no, y no la crees hasta que yo lo confirme.';
+      chatInput.focus();
+      enviarMensaje(chatInput.value);
+      chatInput.value = '';
+    }
+
+    function enviarCaso(caso) {
+      const msg = `Procesa la solicitud "${caso}". Valida todos los controles, muéstrame el payload SAP y crea la OC si cumple todas las reglas o píde confirmación si hay excepciones.`;
+      enviarMensaje(msg);
+    }
+
+    function confirmarAccion(confirmado) {
+      if (confirmado) {
+        enviarMensaje('Confirmo la creación de la orden de compra en SAP con los valores indicados.');
+      } else {
+        confirmationBanner.classList.add('hidden');
+        enviarMensaje('No confirmo la creación. Dejar la solicitud en espera.');
+      }
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text) return;
+      chatInput.value = '';
+      enviarMensaje(text);
+    }
+
+    function renderizarMensajeUsuario(texto) {
+      const div = document.createElement('div');
+      div.className = 'max-w-4xl mx-auto flex justify-end';
+      div.innerHTML = `
+        <div class="bg-sky-600/20 border border-sky-500/40 text-slate-100 rounded-2xl rounded-tr-sm px-4 py-3 max-w-2xl text-sm">
+          <div class="text-[10px] font-semibold uppercase tracking-wider text-sky-400 mb-1">Analista Administrativa</div>
+          <div>${escapeHtml(texto)}</div>
+        </div>
+      `;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function resumirResultadoHerramienta(tc) {
+      try {
+        const res = typeof tc.result === 'string' ? JSON.parse(tc.result) : tc.result;
+        if (!res.ok) return `❌ Error: ${res.error}`;
+        const d = res.data || {};
+        if (tc.name === 'oc_leer_paquete') {
+          return `📦 ${d.solicitud?.solicitud_id} · ${d.solicitud?.proveedor_nombre} · ${d.solicitud?.moneda} ${ Number(d.solicitud?.valor_total || 0).toLocaleString('es-CO') }`;
+        }
+        if (tc.name === 'oc_validar') {
+          return `🛡️ apta=${d.apta} · bloqueos=${(d.bloqueos || []).length} · confirmaciones=${(d.confirmaciones || []).length} · retroactiva=${d.retroactiva}`;
+        }
+        if (tc.name === 'oc_construir_payload') {
+          return `📐 Payload SAP Sociedad ${d.payload?.sociedad} · Proveedor SAP ${d.payload?.proveedor?.codigo_sap} · Trazabilidad: ${d.ruta_trazabilidad}`;
+        }
+        if (tc.name === 'oc_generar_evidencia') {
+          return `🔐 Evidencia generada: ${d.ruta} & ${d.ruta_pdf} (SHA-256: ${(d.sha256 || '').slice(0, 14)}...)`;
+        }
+        if (tc.name === 'oc_crear') {
+          return `✅ OC SAP #${d.numero_oc} creada (${d.idempotente ? 'Idempotente' : 'Nueva'}) · retroactiva=${d.retroactiva}`;
+        }
+        return '✔ Ejecutada correctamente';
+      } catch {
+        return '✔ Ejecutada';
+      }
+    }
+
+    function renderizarRespuestaAgente(reply, toolCalls, needsConfirmation) {
+      const div = document.createElement('div');
+      div.className = 'max-w-4xl mx-auto space-y-2.5';
+
+      // Renderizar tarjetas de llamadas a herramientas (Sección 6.1 PRD)
+      let toolsHtml = '';
+      if (toolCalls && toolCalls.length > 0) {
+        const items = toolCalls.map((tc, idx) => {
+          const resumen = resumirResultadoHerramienta(tc);
+          const argsStr = JSON.stringify(tc.arguments);
+          let prettyResult = '';
+          try {
+            prettyResult = JSON.stringify(typeof tc.result === 'string' ? JSON.parse(tc.result) : tc.result, null, 2);
+          } catch {
+            prettyResult = String(tc.result);
+          }
+          return `
+            <details class="bg-slate-900/90 border border-slate-800 rounded-lg overflow-hidden text-xs">
+              <summary class="px-3.5 py-2 cursor-pointer hover:bg-slate-800/70 flex items-center justify-between gap-2 select-none">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-400 border border-sky-500/30 mono font-semibold shrink-0">🔧 ${escapeHtml(tc.name)}</span>
+                  <span class="text-slate-400 mono truncate">${escapeHtml(argsStr)}</span>
+                </div>
+                <span class="text-slate-300 truncate max-w-md text-[11px]">${escapeHtml(resumen)}</span>
+              </summary>
+              <div class="p-3 border-t border-slate-800 bg-slate-950/90 space-y-2 mono text-[11px]">
+                <div><span class="text-slate-400">Argumentos:</span> <code class="text-amber-300">${escapeHtml(argsStr)}</code></div>
+                <div>
+                  <div class="text-slate-400 mb-1">Resultado JSON (Zod validado):</div>
+                  <pre class="max-h-56 overflow-y-auto p-2.5 rounded bg-slate-900 text-emerald-300 border border-slate-800">${escapeHtml(prettyResult)}</pre>
+                </div>
+              </div>
+            </details>
+          `;
+        }).join('');
+
+        toolsHtml = `
+          <div class="space-y-1.5">
+            <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span>⚡ Llamadas a Herramientas (${toolCalls.length})</span>
+              <span class="text-[10px] text-slate-500 font-normal">(Haz clic para inspeccionar payload JSON)</span>
+            </div>
+            ${items}
+          </div>
+        `;
+      }
+
+      const cardBorder = needsConfirmation
+        ? 'border-amber-500/60 bg-slate-900 shadow-lg shadow-amber-500/5'
+        : 'border-slate-800 bg-slate-900/95';
+
+      const confirmBadge = needsConfirmation
+        ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40">⚠️ Requiere Confirmación Humana</span>`
+        : `<span class="px-2 py-0.5 rounded-full text-[11px] bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Agente SAP</span>`;
+
+      div.innerHTML = `
+        ${toolsHtml}
+        <div class="border ${cardBorder} rounded-2xl rounded-tl-sm p-5 text-sm">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800/80">
+            <span class="text-xs font-bold text-slate-200">🤖 Respuesta del Agente</span>
+            ${confirmBadge}
+          </div>
+          <div class="markdown-body text-slate-200">${marked.parse(reply || '')}</div>
+        </div>
+      `;
+
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    async function enviarMensaje(message) {
+      renderizarMensajeUsuario(message);
+      thinkingIndicator.classList.remove('hidden');
+      confirmationBanner.classList.add('hidden');
+      sendBtn.disabled = true;
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: currentSessionId, message })
+        });
+        const data = await res.json();
+        thinkingIndicator.classList.add('hidden');
+        sendBtn.disabled = false;
+
+        if (!res.ok || data.ok === false) {
+          renderizarRespuestaAgente(`❌ **Error:** ${data.error || 'Error inesperado en el servidor'}`, [], false);
+          return;
+        }
+
+        renderizarRespuestaAgente(data.reply, data.toolCalls || [], Boolean(data.needsConfirmation));
+        confirmationBanner.classList.toggle('hidden', !data.needsConfirmation);
+
+        if (data.tokensUsed !== undefined) {
+          document.getElementById('token-usage-label').textContent =
+            `${data.tokensUsed.toLocaleString()} / ${(data.maxTokens || 100000).toLocaleString()}`;
+        }
+        await cargarEstadoArchivos();
+      } catch (err) {
+        thinkingIndicator.classList.add('hidden');
+        sendBtn.disabled = false;
+        renderizarRespuestaAgente(`❌ **Error de conexión:** No se pudo contactar con el backend.`, [], false);
+      }
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    inicializar();
+  </script>
+</body>
+</html>
