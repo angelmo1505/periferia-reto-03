@@ -520,6 +520,15 @@ export function createAppServer(): http.Server {
         return;
       }
 
+      // POST /api/audit/reset (Limpiar out/ desde la consola web para demostraciones en vivo)
+      if (method === "POST" && url.pathname === "/api/audit/reset") {
+        await fs.rm(path.join(ROOT_DIR, "out"), { recursive: true, force: true });
+        await fs.mkdir(path.join(ROOT_DIR, "out"), { recursive: true });
+        sessions.clear();
+        sendJson(res, 200, { ok: true });
+        return;
+      }
+
       // GET /api/audit (Para visualización en vivo de out/sap/ordenes.jsonl y out/control.csv)
       if (method === "GET" && url.pathname === "/api/audit") {
         let ordenes: unknown[] = [];

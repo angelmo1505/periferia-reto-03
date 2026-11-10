@@ -125,9 +125,14 @@
       <div class="pt-2 border-t border-slate-800">
         <div class="flex items-center justify-between mb-2">
           <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Auditoría SAP & Control</h2>
-          <button onclick="cargarEstadoArchivos()" class="text-[11px] text-sky-400 hover:text-sky-300">
-            Actualizar
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="resetearOut()" class="text-[11px] text-rose-400 hover:text-rose-300" title="Limpia la carpeta out/ para iniciar desde cero">
+              Limpiar out/
+            </button>
+            <button onclick="cargarEstadoArchivos()" class="text-[11px] text-sky-400 hover:text-sky-300">
+              Actualizar
+            </button>
+          </div>
         </div>
         <div id="audit-summary" class="space-y-1.5 text-[11px] text-slate-300 bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 mono max-h-48 overflow-y-auto">
           Cargando registros de out/...
@@ -286,6 +291,12 @@
       } catch {
         box.textContent = 'Sin registros aún.';
       }
+    }
+
+    async function resetearOut() {
+      await fetch('/api/audit/reset', { method: 'POST' });
+      nuevaSesion();
+      await cargarEstadoArchivos();
     }
 
     function nuevaSesion() {
